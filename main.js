@@ -1,7 +1,8 @@
 const { Client } = require('pg');
+require('dotenv').config();
 
 const client = new Client({
-    connectionString: 'postgresql://securesight_rptr_user:FlNRwMg6GQp1liXZ6jhpWjJ9UfgXJMno@dpg-d21pihemcj7s73er7h6g-a.singapore-postgres.render.com/securesight_rptr',
+    connectionString: process.env.database_url,
     ssl: { rejectUnauthorized: false } // Required for most hosted DBs
 });
 
