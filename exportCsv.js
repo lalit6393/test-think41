@@ -1,35 +1,26 @@
-const fs = require('fs');
-const csv = require('csv-parser');
 const { Pool } = require('pg');
+const fs = require('fs');
+const copyFrom = require('pg-copy-streams').from;
 
 const pool = new Pool({
-    connectionString: 'postgresql://securesight_rptr_user:FlNRwMg6GQp1liXZ6jhpWjJ9UfgXJMno@dpg-d21pihemcj7s73er7h6g-a.singapore-postgres.render.com/securesight_rptr',
-    ssl: { rejectUnauthorized: false }
+  connectionString: 'postgresql://securesight_rptr_user:FlNRwMg6GQp1liXZ6jhpWjJ9UfgXJMno@dpg-d21pihemcj7s73er7h6g-a.singapore-postgres.render.com/securesight_rptr',
+  ssl: { rejectUnauthorized: false }
 });
 
-async function exportCsv() {
-    const client = await pool.connect();
-    const results = [];
+(async () => {
+  const client = await pool.connect();
+  await client.query('TRUNCATE TABLE products');
+  const stream = client.query(copyFrom('COPY products (id, cost, category, name, brand, retail_price, department, sku, distribution_center_id) FROM STDIN WITH CSV HEADER'));
+  const fileStream = fs.createReadStream('products.csv');
 
-    fs.createReadStream('products.csv') // Path to your CSV file
-        .pipe(csv())
-        .on('data', (data) => results.push(data))
-        .on('end', async () => {
-            for (const row of results) {
-                try {
-                    await client.query(
-                        'INSERT INTO products (id, cost, category, name, brand, retail_price, department, sku, distribution_center_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-                        [row.id, row.cost, row.category, row.name, row.brand, row.retail_price, row.department, row.sku, row.distribution_center_id]
-          );
-} catch (err) {
-    console.error('Insert failed for row:', row, err.message);
-}
-      }
+  fileStream.on('error', err => console.error('File error:', err));
+  stream.on('error', err => console.error('Stream error:', err));
+  stream.on('end', () => {
+    console.log('✅ Done with COPY');
+    client.release();
+    process.exit(0);
+  });
 
-client.release();
-console.log('✅ Done exproting CSV to Postgres');
-process.exit(0);
-    });
-}
+  fileStream.pipe(stream);
+})();
 
-exportCsv();
