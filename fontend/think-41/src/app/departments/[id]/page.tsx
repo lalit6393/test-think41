@@ -1,8 +1,9 @@
 'use client'
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import Link from 'next/link';
 
-const Item = () => {
+const Department = () => {
     const params = useParams();
     const id = params?.id as string;
     const [item, setItem] = useState<any | null>(null);
@@ -10,9 +11,10 @@ const Item = () => {
 
     const itemAPI = async () => {
         setLoading(true);
-        const res = await fetch(`http://localhost:3000/api/products/${id}`);
+
+        const res = await fetch(`http://localhost:3000/api/departments/${id}`);
         const data = await res.json();
-        
+
         setItem(data[0])
         setLoading(false);
     }
@@ -28,18 +30,14 @@ const Item = () => {
         <div className='bg-slate-900 text-slate-50 rounded-xl p-4 cursor-pointer'>
             {
                 item ?
-                    <>
-                        <h2>{item.name}</h2>
-                        <p>Price: {item.retail_price}</p>
-                        <p>Brand: {item.brand}</p>
-                        <p>Category: {item.category}</p>
-                        <p>Cost: {item.cost}</p>
-                        <p>Department: {item.department}</p>
-                    </> :
+                    <div className='flex flex-col gap-4'>
+                        <p>{item.name}</p>
+                        <Link href={`/departments/${id}/products`} className='text-blue-400 bg-slate-100 rounded-lg px-4 py-2'>Products</Link>
+                    </div> :
                     <p>Item not found</p>
             }
         </div>
     )
 }
 
-export default Item
+export default Department
